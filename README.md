@@ -52,6 +52,23 @@ first pass:
   positives, and write tailored remediation — layered *on top of* a
   deterministic core that never requires the LLM.
 
+## Scanner-agnostic via SARIF
+
+ThreatLens ingests **Semgrep JSON** *or* **SARIF 2.1.0** — the OASIS standard
+that CodeQL, Trivy, Bandit, Checkov, and Semgrep all emit — so one adapter covers
+the ecosystem. It also **outputs SARIF**, which uploads to **GitHub Code
+Scanning**: triaged, de-noised findings appear in your repo's Security tab, with
+likely false-positives sent as dismissed suppressions. Input format is
+auto-detected; output format follows the `--out` extension (`.html`, `.sarif`).
+
+```bash
+threatlens triage results.sarif --out report.html          # SARIF in  -> HTML dashboard
+threatlens triage semgrep.json  --format sarif --out tl.sarif   # Semgrep in -> SARIF out
+```
+
+See [`.github/workflows/scan.yml`](.github/workflows/scan.yml) for the full
+Semgrep → ThreatLens → Code Scanning pipeline.
+
 ## Quick start
 
 ```bash

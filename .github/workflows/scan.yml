@@ -1,0 +1,50 @@
+name: Code scanning (ThreatLens)
+
+# Demonstrates the SARIF pipeline end to end:
+#   Semgrep (SARIF) -> ThreatLens triage (SARIF) -> GitHub Code Scanning.
+# Triaged, de-noised findings then appear in the repo's Security tab, with
+# likely false-positives uploaded as dismissed suppressions.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install ThreatLens + Semgrep
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+          pip install semgrep
+
+      - name: Semgrep -> SARIF (live scan of demo target)
+        run: |
+          semgrep scan --config=auto --sarif --output raw.sarif examples/vulnerable_demo || true
+
+      - name: ThreatLens triage -> SARIF
+        run: |
+          if [ -s raw.sarif ] && python -c "import json,sys; sys.exit(0 if json.load(open('raw.sarif')).get('runs',[{}])[0].get('results') else 1)"; then
+            echo "Triaging live Semgrep SARIF."
+            threatlens triage raw.sarif --format sarif --out threatlens.sarif
+          else
+            echo "No live findings; triaging bundled sample."
+            threatlens triage examples/semgrep-sample.json --format sarif --out threatlens.sarif
+          fi
+
+      - name: Upload to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: threatlens.sarif
+          category: threatlens

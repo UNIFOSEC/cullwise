@@ -11,9 +11,9 @@ import sys
 from pathlib import Path
 
 from . import __version__
-from .ingest import load_semgrep_file
+from .ingest import load_findings
 from .models import Severity
-from .report import render_html, render_markdown
+from .report import render_html, render_markdown, render_sarif
 from .triage import triage
 
 
@@ -21,20 +21,27 @@ def _resolve_format(args: argparse.Namespace) -> str:
     if args.format:
         return args.format
     # Auto-detect from the output filename when --format is not given.
-    if args.out and args.out.lower().endswith((".html", ".htm")):
-        return "html"
+    if args.out:
+        low = args.out.lower()
+        if low.endswith((".html", ".htm")):
+            return "html"
+        if low.endswith((".sarif", ".sarif.json")):
+            return "sarif"
     return "md"
 
 
+_RENDERERS = {"md": render_markdown, "html": render_html, "sarif": render_sarif}
+
+
 def _cmd_triage(args: argparse.Namespace) -> int:
-    findings = load_semgrep_file(args.input)
+    findings = load_findings(args.input, fmt=args.input_format)
     if args.min_severity:
         floor = Severity(args.min_severity).rank
         findings = [f for f in findings if f.severity.rank >= floor]
 
     result = triage(findings, use_llm=args.llm)
     fmt = _resolve_format(args)
-    report = render_html(result) if fmt == "html" else render_markdown(result)
+    report = _RENDERERS[fmt](result)
 
     if args.out:
         Path(args.out).write_text(report, encoding="utf-8")
@@ -58,12 +65,18 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", required=True)
 
     tri = sub.add_parser("triage", help="Triage a scanner findings file.")
-    tri.add_argument("input", help="Path to a Semgrep JSON results file.")
+    tri.add_argument("input", help="Path to a Semgrep JSON or SARIF results file.")
+    tri.add_argument(
+        "--input-format",
+        choices=["auto", "semgrep", "sarif"],
+        default="auto",
+        help="Input format. 'auto' detects Semgrep JSON vs SARIF (default).",
+    )
     tri.add_argument("--out", help="Write the report to this file (format auto-detected from extension).")
     tri.add_argument(
         "--format",
-        choices=["md", "html"],
-        help="Report format. Defaults to html when --out ends in .html, else md.",
+        choices=["md", "html", "sarif"],
+        help="Report format. Auto-detects from --out extension (.html/.sarif), else md.",
     )
     tri.add_argument("--llm", action="store_true", help="Use Claude for triage (needs ANTHROPIC_API_KEY).")
     tri.add_argument(
