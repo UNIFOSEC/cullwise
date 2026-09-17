@@ -134,9 +134,13 @@ _TEMPLATE = """<!doctype html>
   * { box-sizing:border-box; }
   body { margin:0; background:var(--bg); color:var(--text); font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
   .wrap { max-width:980px; margin:0 auto; padding:32px 20px 64px; }
-  header.top { display:flex; align-items:center; gap:14px; margin-bottom:6px; }
+  header.top { display:flex; align-items:center; justify-content:space-between; gap:14px; margin-bottom:6px; }
+  header.top .top-left { display:flex; align-items:center; gap:14px; }
   header.top .logo { width:40px; height:40px; flex:0 0 auto; }
   header.top h1 { font-size:22px; margin:0; letter-spacing:-.02em; }
+  .back-link { font-size:13px; font-weight:600; color:var(--accent); text-decoration:none;
+    border:1px solid var(--border); background:var(--panel); padding:7px 12px; border-radius:9px; white-space:nowrap; }
+  .back-link:hover { border-color:var(--accent); }
   .subtitle { color:var(--muted); margin:2px 0 24px; }
   .summary { font-size:16px; margin:0 0 20px; }
   .summary b { color:var(--accent); }
@@ -198,12 +202,15 @@ _TEMPLATE = """<!doctype html>
 <body>
   <div class="wrap">
     <header class="top">
-      <svg class="logo" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <path d="M12 2 4 5v6c0 5 3.4 8.5 8 11 4.6-2.5 8-6 8-11V5l-8-3Z" fill="var(--accent)" opacity="0.18"/>
-        <path d="M12 2 4 5v6c0 5 3.4 8.5 8 11 4.6-2.5 8-6 8-11V5l-8-3Z" stroke="var(--accent)" stroke-width="1.5"/>
-        <path d="m8.5 12 2.3 2.3L15.7 9.4" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      <h1>ThreatLens Triage Report</h1>
+      <div class="top-left">
+        <svg class="logo" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M12 2 4 5v6c0 5 3.4 8.5 8 11 4.6-2.5 8-6 8-11V5l-8-3Z" fill="var(--accent)" opacity="0.18"/>
+          <path d="M12 2 4 5v6c0 5 3.4 8.5 8 11 4.6-2.5 8-6 8-11V5l-8-3Z" stroke="var(--accent)" stroke-width="1.5"/>
+          <path d="m8.5 12 2.3 2.3L15.7 9.4" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <h1>ThreatLens Triage Report</h1>
+      </div>
+      <a class="back-link" href="https://unifosec.github.io/">&larr; Portfolio</a>
     </header>
     <p class="subtitle">AI-assisted application-security triage &middot; findings clustered by vulnerability class</p>
 

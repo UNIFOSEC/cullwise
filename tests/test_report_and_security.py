@@ -23,10 +23,11 @@ def test_html_report_is_self_contained():
     assert html.startswith("<!doctype html>")
     assert "ThreatLens Triage Report" in html
     assert "Vulnerability classes" in html
-    # No external assets: inline <script>/<style> are fine, but nothing is fetched.
+    # No external assets fetched: inline <script>/<style> are fine, and an
+    # anchor href for navigation is fine, but nothing external is loaded.
     assert "<link" not in html
     assert "<script src" not in html
-    assert 'src="http' not in html and 'href="http' not in html
+    assert 'src="http' not in html
     assert "Content-Security-Policy" in html  # egress blocked
 
 
