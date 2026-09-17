@@ -1,7 +1,7 @@
-"""ThreatLens command-line interface.
+"""Cullwise command-line interface.
 
-    threatlens triage examples/semgrep-sample.json --out report.md
-    threatlens triage findings.json --llm --min-severity MEDIUM
+    cullwise triage examples/semgrep-sample.json --out report.md
+    cullwise triage findings.json --llm --min-severity MEDIUM
 """
 
 from __future__ import annotations
@@ -45,13 +45,13 @@ def _cmd_triage(args: argparse.Namespace) -> int:
 
     if args.out:
         Path(args.out).write_text(report, encoding="utf-8")
-        print(f"[threatlens] wrote {args.out}")
+        print(f"[cullwise] wrote {args.out}")
     else:
         print(report)
 
     s = result.stats
     print(
-        f"[threatlens] {s.raw_count} raw → {s.deduped_count} unique → "
+        f"[cullwise] {s.raw_count} raw → {s.deduped_count} unique → "
         f"{s.actionable_count} actionable ({s.false_positive_count} likely FP)",
         file=sys.stderr,
     )
@@ -60,8 +60,8 @@ def _cmd_triage(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="threatlens", description=__doc__)
-    parser.add_argument("--version", action="version", version=f"threatlens {__version__}")
+    parser = argparse.ArgumentParser(prog="cullwise", description=__doc__)
+    parser.add_argument("--version", action="version", version=f"cullwise {__version__}")
     sub = parser.add_subparsers(dest="command", required=True)
 
     tri = sub.add_parser("triage", help="Triage a scanner findings file.")

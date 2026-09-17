@@ -1,6 +1,6 @@
 """Optional LLM enrichment via the Anthropic Claude API.
 
-Isolated so the rest of ThreatLens never imports `anthropic` unless LLM triage
+Isolated so the rest of Cullwise never imports `anthropic` unless LLM triage
 is explicitly requested. Model output is parsed defensively and merged onto the
 heuristic result; anything malformed is ignored rather than trusted.
 """
@@ -15,7 +15,7 @@ from ..models import Severity, TriagedFinding
 from .prompts import SYSTEM_PROMPT, build_user_prompt
 
 # Current Claude model id (see project notes on model ids).
-DEFAULT_MODEL = os.environ.get("THREATLENS_MODEL", "claude-sonnet-5")
+DEFAULT_MODEL = os.environ.get("CULLWISE_MODEL", "claude-sonnet-5")
 
 
 def _extract_json_array(text: str) -> list[dict]:

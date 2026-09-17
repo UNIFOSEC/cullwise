@@ -3,7 +3,7 @@
 The engine is deterministic and offline by default. If `use_llm=True` and the
 optional `anthropic` dependency + API key are present, LLM judgement is layered
 on top (severity adjustment, false-positive calls, tailored remediation). The
-heuristic result is always the fallback, so ThreatLens never *requires* the LLM.
+heuristic result is always the fallback, so Cullwise never *requires* the LLM.
 """
 
 from __future__ import annotations
@@ -134,7 +134,7 @@ def triage(findings: list[Finding], *, use_llm: bool = False) -> TriageResult:
 
             triaged = enrich_with_llm(triaged)
         except Exception as exc:  # noqa: BLE001 - fall back, never fail the run
-            print(f"[threatlens] LLM triage unavailable, using heuristics: {exc}")
+            print(f"[cullwise] LLM triage unavailable, using heuristics: {exc}")
 
     triaged.sort(key=lambda t: t.sort_key, reverse=True)
     return TriageResult(findings=triaged, stats=_build_stats(findings, triaged))

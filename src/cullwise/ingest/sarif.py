@@ -1,7 +1,7 @@
 """Parse SARIF 2.1.0 into normalized Finding objects.
 
 SARIF (OASIS standard) is what CodeQL, Trivy, Bandit, Checkov, and Semgrep all
-speak. Ingesting SARIF makes ThreatLens scanner-agnostic — one adapter covers
+speak. Ingesting SARIF makes Cullwise scanner-agnostic — one adapter covers
 the whole ecosystem instead of a per-tool parser.
 """
 

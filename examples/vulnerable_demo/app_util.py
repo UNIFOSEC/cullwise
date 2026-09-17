@@ -1,4 +1,4 @@
-"""Intentionally insecure demo code for the ThreatLens dashboard scan. Not real."""
+"""Intentionally insecure demo code for the Cullwise dashboard scan. Not real."""
 
 import hashlib
 

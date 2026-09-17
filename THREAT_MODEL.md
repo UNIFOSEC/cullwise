@@ -1,6 +1,6 @@
-# ThreatLens — Threat Model
+# Cullwise — Threat Model
 
-A STRIDE-style threat model of ThreatLens itself. Because the tool ingests
+A STRIDE-style threat model of Cullwise itself. Because the tool ingests
 attacker-influenceable data and can call an LLM, it warrants the same rigor it
 applies to the code it scans.
 
@@ -10,9 +10,9 @@ applies to the code it scans.
 real vulnerability), the API key, and the developer's trust in the report.
 
 **Trust boundaries:**
-1. Scanner output → ThreatLens (untrusted: derived from arbitrary source).
-2. ThreatLens → Claude API (network egress; capped, delimited data).
-3. ThreatLens → CI / PR comment (output consumed by humans and pipeline gates).
+1. Scanner output → Cullwise (untrusted: derived from arbitrary source).
+2. Cullwise → Claude API (network egress; capped, delimited data).
+3. Cullwise → CI / PR comment (output consumed by humans and pipeline gates).
 
 **Data flow:** `repo → semgrep → JSON → ingest → dedupe/classify → [Claude] →
 report → PR/CI`.
@@ -32,7 +32,7 @@ report → PR/CI`.
 
 - LLM triage is **advisory**; the report states this and severity floors are
   never silently raised past what the scanner reported without a rationale.
-- ThreatLens trusts the Semgrep binary and the Claude API endpoint it is
+- Cullwise trusts the Semgrep binary and the Claude API endpoint it is
   configured to call; pin/verify these in your pipeline.
 - Prompt-injection defenses reduce but do not eliminate risk — hence the
   deterministic fallback and the "no autonomous action" rule.

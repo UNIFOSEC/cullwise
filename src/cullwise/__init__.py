@@ -1,4 +1,4 @@
-"""ThreatLens — AI-assisted AppSec triage for CI/CD.
+"""Cullwise — AI-assisted AppSec triage for CI/CD.
 
 Phase 1: ingest scanner findings (Semgrep), de-duplicate, cluster into
 vulnerability *classes*, and produce a prioritized, remediation-first report.

@@ -1,6 +1,6 @@
-# 🛡️ ThreatLens
+# 🛡️ Cullwise
 
-**AI-assisted application-security triage for CI/CD.** ThreatLens turns raw
+**AI-assisted application-security triage for CI/CD.** Cullwise turns raw
 scanner noise into a prioritized, remediation-first report — de-duplicating
 findings and clustering them into **vulnerability classes** so teams fix
 categories, not one-off bugs.
@@ -9,7 +9,7 @@ categories, not one-off bugs.
 > Markdown report. Threat-modeling and PR-diff review land in later phases
 > (see [Roadmap](#roadmap)).
 
-**🔴 Live dashboard:** https://unifosec.github.io/threatlens/ — rebuilt on every
+**🔴 Live dashboard:** https://unifosec.github.io/cullwise/ — rebuilt on every
 push by [`.github/workflows/pages.yml`](.github/workflows/pages.yml).
 
 ---
@@ -17,20 +17,20 @@ push by [`.github/workflows/pages.yml`](.github/workflows/pages.yml).
 ## Live dashboard (GitHub Pages)
 
 On every push to `main`, CI runs Semgrep against a demo target, triages the
-findings with ThreatLens, and publishes the HTML report to GitHub Pages — an
+findings with Cullwise, and publishes the HTML report to GitHub Pages — an
 always-current security dashboard at a public URL.
 
 **One-time setup** (after the repo is on GitHub):
 
-1. Push this repo to `github.com/UNIFOSEC/threatlens`.
+1. Push this repo to `github.com/UNIFOSEC/cullwise`.
 2. In the repo: **Settings → Pages → Build and deployment → Source = GitHub Actions**.
 3. Push any commit (or run the **Deploy dashboard** workflow manually from the
-   Actions tab). The dashboard appears at `https://unifosec.github.io/threatlens/`.
+   Actions tab). The dashboard appears at `https://unifosec.github.io/cullwise/`.
 
 Build it locally the same way CI does:
 
 ```bash
-threatlens triage examples/semgrep-sample.json --out site/index.html
+cullwise triage examples/semgrep-sample.json --out site/index.html
 # then open site/index.html
 ```
 
@@ -40,7 +40,7 @@ threatlens triage examples/semgrep-sample.json --out site/index.html
 
 Security teams drown in scanner output: hundreds of findings, heavy duplication,
 and a long tail of false positives. The manual triage that follows is the real
-cost — and it's the work least suited to a human. ThreatLens automates the
+cost — and it's the work least suited to a human. Cullwise automates the
 first pass:
 
 - **De-duplicates** findings that share a rule + location + snippet.
@@ -54,7 +54,7 @@ first pass:
 
 ## Scanner-agnostic via SARIF
 
-ThreatLens ingests **Semgrep JSON** *or* **SARIF 2.1.0** — the OASIS standard
+Cullwise ingests **Semgrep JSON** *or* **SARIF 2.1.0** — the OASIS standard
 that CodeQL, Trivy, Bandit, Checkov, and Semgrep all emit — so one adapter covers
 the ecosystem. It also **outputs SARIF**, which uploads to **GitHub Code
 Scanning**: triaged, de-noised findings appear in your repo's Security tab, with
@@ -62,12 +62,12 @@ likely false-positives sent as dismissed suppressions. Input format is
 auto-detected; output format follows the `--out` extension (`.html`, `.sarif`).
 
 ```bash
-threatlens triage results.sarif --out report.html          # SARIF in  -> HTML dashboard
-threatlens triage semgrep.json  --format sarif --out tl.sarif   # Semgrep in -> SARIF out
+cullwise triage results.sarif --out report.html          # SARIF in  -> HTML dashboard
+cullwise triage semgrep.json  --format sarif --out tl.sarif   # Semgrep in -> SARIF out
 ```
 
 See [`.github/workflows/scan.yml`](.github/workflows/scan.yml) for the full
-Semgrep → ThreatLens → Code Scanning pipeline.
+Semgrep → Cullwise → Code Scanning pipeline.
 
 ## Quick start
 
@@ -75,18 +75,18 @@ Semgrep → ThreatLens → Code Scanning pipeline.
 pip install -e ".[dev]"
 
 # Offline, deterministic triage (no API key needed):
-threatlens triage examples/semgrep-sample.json --out report.md
+cullwise triage examples/semgrep-sample.json --out report.md
 
 # LLM-assisted triage (needs ANTHROPIC_API_KEY):
 export ANTHROPIC_API_KEY=sk-...
-threatlens triage examples/semgrep-sample.json --llm --out report.md
+cullwise triage examples/semgrep-sample.json --llm --out report.md
 ```
 
 Generate your own input with Semgrep:
 
 ```bash
 semgrep --config=auto --json -o findings.json .
-threatlens triage findings.json --out report.md --fail-on-findings
+cullwise triage findings.json --out report.md --fail-on-findings
 ```
 
 `--fail-on-findings` exits non-zero when actionable findings remain, so it can
@@ -127,7 +127,7 @@ Semgrep JSON ──▶ ingest ──▶ Finding[]
 
 ## Securing the tool itself
 
-ThreatLens feeds **untrusted, attacker-influenceable content** (code snippets and
+Cullwise feeds **untrusted, attacker-influenceable content** (code snippets and
 messages from the scanned repo) into an LLM, so it is itself a target for
 **prompt injection**. The defenses are described in
 [`SECURITY.md`](SECURITY.md) and [`THREAT_MODEL.md`](THREAT_MODEL.md), and in
@@ -137,7 +137,7 @@ short:
    with break-out attempts neutralized (`security.py`).
 2. The system prompt treats delimited content as **data, never instructions**.
 3. LLM output is **validated back through Pydantic** and used only to produce a
-   report — ThreatLens takes **no autonomous action** on model output.
+   report — Cullwise takes **no autonomous action** on model output.
 4. The CI token is **least-privilege**; the tool needs no write scope.
 
 ## Development
@@ -147,7 +147,7 @@ pip install -e ".[dev]"
 pytest -q
 ```
 
-CI runs the suite on Python 3.10–3.12 and **dogfoods** ThreatLens against its own
+CI runs the suite on Python 3.10–3.12 and **dogfoods** Cullwise against its own
 sample findings on every push.
 
 ## Roadmap

@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "threatlens"
+name = "cullwise"
 version = "0.1.0"
 description = "AI-assisted AppSec triage for CI/CD — turn scanner noise into a prioritized, class-clustered remediation report."
 readme = "README.md"
@@ -20,7 +20,7 @@ llm = ["anthropic>=0.40"]
 dev = ["pytest>=8.0"]
 
 [project.scripts]
-threatlens = "threatlens.cli:main"
+cullwise = "cullwise.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

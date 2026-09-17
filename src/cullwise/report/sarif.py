@@ -1,6 +1,6 @@
 """Emit triage results as SARIF 2.1.0.
 
-This lets ThreatLens output be uploaded to GitHub Code Scanning (via
+This lets Cullwise output be uploaded to GitHub Code Scanning (via
 github/codeql-action/upload-sarif), so triaged, de-noised findings appear in the
 repo's Security tab. Likely false-positives are emitted as SARIF *suppressions*,
 so they show up dismissed rather than as noise.
@@ -39,13 +39,13 @@ def build_sarif(result: TriageResult) -> dict:
         rid = f.rule_id or "unknown"
 
         if rid not in rules:
-            tags = ["security", f"threatlens/class/{t.vulnerability_class}"] + list(f.cwe)
+            tags = ["security", f"cullwise/class/{t.vulnerability_class}"] + list(f.cwe)
             rules[rid] = {
                 "id": rid,
                 "name": t.vulnerability_class.replace(" ", ""),
                 "shortDescription": {"text": t.vulnerability_class},
                 "fullDescription": {"text": t.remediation or t.vulnerability_class},
-                "helpUri": "https://github.com/UNIFOSEC/threatlens",
+                "helpUri": "https://github.com/UNIFOSEC/cullwise",
                 "properties": {
                     "tags": tags,
                     "security-severity": _SECURITY_SEVERITY[t.adjusted_severity],
@@ -67,7 +67,7 @@ def build_sarif(result: TriageResult) -> dict:
                     }
                 }
             ],
-            "partialFingerprints": {"threatlensFingerprint": f.fingerprint or f.id},
+            "partialFingerprints": {"cullwiseFingerprint": f.fingerprint or f.id},
             "properties": {
                 "vulnerabilityClass": t.vulnerability_class,
                 "confidence": round(t.confidence, 3),
@@ -80,7 +80,7 @@ def build_sarif(result: TriageResult) -> dict:
             result_obj["suppressions"] = [
                 {
                     "kind": "external",
-                    "justification": t.rationale or "Likely false-positive (ThreatLens triage).",
+                    "justification": t.rationale or "Likely false-positive (Cullwise triage).",
                 }
             ]
         results.append(result_obj)
@@ -92,8 +92,8 @@ def build_sarif(result: TriageResult) -> dict:
             {
                 "tool": {
                     "driver": {
-                        "name": "ThreatLens",
-                        "informationUri": "https://github.com/UNIFOSEC/threatlens",
+                        "name": "Cullwise",
+                        "informationUri": "https://github.com/UNIFOSEC/cullwise",
                         "version": __version__,
                         "rules": list(rules.values()),
                     }

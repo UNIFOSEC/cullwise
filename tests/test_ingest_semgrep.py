@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from threatlens.ingest import load_semgrep_file, parse_semgrep
-from threatlens.models import Severity
+from cullwise.ingest import load_semgrep_file, parse_semgrep
+from cullwise.models import Severity
 
 SAMPLE = Path(__file__).resolve().parents[1] / "examples" / "semgrep-sample.json"
 

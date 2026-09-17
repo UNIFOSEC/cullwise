@@ -1,9 +1,9 @@
 from pathlib import Path
 
-from threatlens.ingest import detect_format, load_findings, parse_sarif
-from threatlens.models import Severity
-from threatlens.report import build_sarif
-from threatlens.triage import triage
+from cullwise.ingest import detect_format, load_findings, parse_sarif
+from cullwise.models import Severity
+from cullwise.report import build_sarif
+from cullwise.triage import triage
 
 EXAMPLES = Path(__file__).resolve().parents[1] / "examples"
 SARIF = EXAMPLES / "sarif-sample.sarif"
@@ -53,7 +53,7 @@ def test_build_sarif_shape():
     doc = build_sarif(result)
     assert doc["version"] == "2.1.0"
     run = doc["runs"][0]
-    assert run["tool"]["driver"]["name"] == "ThreatLens"
+    assert run["tool"]["driver"]["name"] == "Cullwise"
     assert len(run["results"]) == len(result.findings)
     # every result carries a security-severity on its rule
     for rule in run["tool"]["driver"]["rules"]:
@@ -68,7 +68,7 @@ def test_build_sarif_suppresses_false_positives():
 
 
 def test_sarif_roundtrip():
-    # ThreatLens output SARIF can be re-ingested by ThreatLens.
+    # Cullwise output SARIF can be re-ingested by Cullwise.
     result = triage(load_findings(SEMGREP), use_llm=False)
     doc = build_sarif(result)
     reparsed = parse_sarif(doc)

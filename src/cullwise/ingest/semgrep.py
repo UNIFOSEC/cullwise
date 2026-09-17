@@ -1,6 +1,6 @@
 """Parse Semgrep JSON output into normalized Finding objects.
 
-Semgrep is invoked out-of-band (`semgrep --json`); ThreatLens reasons over its
+Semgrep is invoked out-of-band (`semgrep --json`); Cullwise reasons over its
 output rather than re-implementing scanning. Keeping ingest a thin, typed
 adapter is what lets us add Trivy/Grype later behind the same Finding model.
 """

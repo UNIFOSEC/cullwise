@@ -1,7 +1,7 @@
 """Findings ingestion — format-agnostic entry point.
 
 `load_findings` auto-detects Semgrep-native JSON vs SARIF and dispatches to the
-right parser, so the rest of ThreatLens only ever sees normalized `Finding`s.
+right parser, so the rest of Cullwise only ever sees normalized `Finding`s.
 """
 
 from __future__ import annotations

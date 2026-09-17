@@ -1,9 +1,9 @@
 from pathlib import Path
 
-from threatlens.ingest import load_semgrep_file, parse_semgrep
-from threatlens.report import render_html, render_markdown
-from threatlens.security import UNTRUSTED_CLOSE, wrap_untrusted
-from threatlens.triage import triage
+from cullwise.ingest import load_semgrep_file, parse_semgrep
+from cullwise.report import render_html, render_markdown
+from cullwise.security import UNTRUSTED_CLOSE, wrap_untrusted
+from cullwise.triage import triage
 
 SAMPLE = Path(__file__).resolve().parents[1] / "examples" / "semgrep-sample.json"
 
@@ -11,7 +11,7 @@ SAMPLE = Path(__file__).resolve().parents[1] / "examples" / "semgrep-sample.json
 def test_report_renders_expected_sections():
     result = triage(load_semgrep_file(SAMPLE), use_llm=False)
     md = render_markdown(result)
-    assert "# 🛡️ ThreatLens Triage Report" in md
+    assert "# 🛡️ Cullwise Triage Report" in md
     assert "Vulnerability classes" in md
     assert "SQL Injection" in md
     assert "Remediation:" in md
@@ -21,7 +21,7 @@ def test_html_report_is_self_contained():
     result = triage(load_semgrep_file(SAMPLE), use_llm=False)
     html = render_html(result)
     assert html.startswith("<!doctype html>")
-    assert "ThreatLens Triage Report" in html
+    assert "Cullwise Triage Report" in html
     assert "Vulnerability classes" in html
     # No external assets fetched: inline <script>/<style> are fine, and an
     # anchor href for navigation is fine, but nothing external is loaded.

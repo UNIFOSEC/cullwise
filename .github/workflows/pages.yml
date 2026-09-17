@@ -1,7 +1,7 @@
 name: Deploy dashboard
 
 # Live dashboard: on every push to main, run Semgrep on the demo target,
-# triage with ThreatLens, and publish the HTML report to GitHub Pages.
+# triage with Cullwise, and publish the HTML report to GitHub Pages.
 on:
   push:
     branches: [main]
@@ -27,7 +27,7 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install ThreatLens + Semgrep
+      - name: Install Cullwise + Semgrep
         run: |
           python -m pip install --upgrade pip
           pip install -e .
@@ -42,10 +42,10 @@ jobs:
           mkdir -p site
           if [ -s findings.json ] && python -c "import json,sys; sys.exit(0 if json.load(open('findings.json')).get('results') else 1)"; then
             echo "Using live Semgrep findings."
-            threatlens triage findings.json --out site/index.html
+            cullwise triage findings.json --out site/index.html
           else
             echo "No live findings; using bundled sample."
-            threatlens triage examples/semgrep-sample.json --out site/index.html
+            cullwise triage examples/semgrep-sample.json --out site/index.html
           fi
 
       - name: Upload Pages artifact
