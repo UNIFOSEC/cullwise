@@ -1,0 +1,78 @@
+{
+  "version": "1.90.0",
+  "results": [
+    {
+      "check_id": "python.lang.security.audit.formatted-sql-query",
+      "path": "app/db.py",
+      "start": { "line": 42, "col": 12 },
+      "end": { "line": 42, "col": 68 },
+      "extra": {
+        "message": "Detected SQL statement built with string formatting. This may be vulnerable to SQL injection.",
+        "severity": "ERROR",
+        "metadata": { "cwe": ["CWE-89: SQL Injection"], "owasp": ["A03:2021 - Injection"], "category": "security" },
+        "lines": "cursor.execute(\"SELECT * FROM users WHERE name = '%s'\" % request.args['name'])"
+      }
+    },
+    {
+      "check_id": "python.lang.security.audit.formatted-sql-query",
+      "path": "app/db.py",
+      "start": { "line": 42, "col": 12 },
+      "end": { "line": 42, "col": 68 },
+      "extra": {
+        "message": "Detected SQL statement built with string formatting. This may be vulnerable to SQL injection.",
+        "severity": "ERROR",
+        "metadata": { "cwe": ["CWE-89: SQL Injection"], "owasp": ["A03:2021 - Injection"], "category": "security" },
+        "lines": "cursor.execute(\"SELECT * FROM users WHERE name = '%s'\" % request.args['name'])"
+      }
+    },
+    {
+      "check_id": "generic.secrets.security.detected-generic-api-key",
+      "path": "app/config.py",
+      "start": { "line": 10, "col": 1 },
+      "end": { "line": 10, "col": 44 },
+      "extra": {
+        "message": "A hardcoded API key was detected in source code.",
+        "severity": "ERROR",
+        "metadata": { "cwe": ["CWE-798: Use of Hard-coded Credentials"], "category": "security" },
+        "lines": "API_KEY = \"demoFAKEkey_not_a_real_secret_0123456789abcdef\""
+      }
+    },
+    {
+      "check_id": "python.lang.security.insecure-hash-algorithm-md5",
+      "path": "app/util.py",
+      "start": { "line": 5, "col": 5 },
+      "end": { "line": 5, "col": 30 },
+      "extra": {
+        "message": "MD5 is a weak hash function and should not be used for security purposes.",
+        "severity": "WARNING",
+        "metadata": { "cwe": ["CWE-327: Use of a Broken or Risky Cryptographic Algorithm"], "category": "security" },
+        "lines": "token = hashlib.md5(password.encode()).hexdigest()"
+      }
+    },
+    {
+      "check_id": "python.flask.security.xss.audit.direct-use-of-jinja2",
+      "path": "app/views.py",
+      "start": { "line": 88, "col": 12 },
+      "end": { "line": 88, "col": 60 },
+      "extra": {
+        "message": "Detected user input flowing into a rendered template without escaping (reflected XSS).",
+        "severity": "ERROR",
+        "metadata": { "cwe": ["CWE-79: Cross-site Scripting"], "owasp": ["A03:2021 - Injection"], "category": "security" },
+        "lines": "return render_template_string(\"<h1>Hi \" + request.args['user'] + \"</h1>\")"
+      }
+    },
+    {
+      "check_id": "python.lang.security.audit.formatted-sql-query",
+      "path": "tests/test_api.py",
+      "start": { "line": 17, "col": 8 },
+      "end": { "line": 17, "col": 55 },
+      "extra": {
+        "message": "Detected SQL statement built with string formatting.",
+        "severity": "WARNING",
+        "metadata": { "cwe": ["CWE-89: SQL Injection"], "category": "security" },
+        "lines": "db.execute(\"SELECT * FROM t WHERE id = %s\" % fake_id)  # test fixture"
+      }
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+
+# Test / tooling
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Secrets & local config
+.env
+*.local
+
+# Generated reports & Pages build output
+triage-report.md
+report.html
+report.md
+*.report.md
+*.report.html
+findings.json
+site/
+
+# Personal documents — never commit résumé / cover letters to this repo
+*.docx
+*resume*
+*Resume*
+*cover-letter*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
