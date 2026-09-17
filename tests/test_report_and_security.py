@@ -23,10 +23,21 @@ def test_html_report_is_self_contained():
     assert html.startswith("<!doctype html>")
     assert "ThreatLens Triage Report" in html
     assert "Vulnerability classes" in html
-    # No external assets: the xmlns namespace URI is fine, but nothing is fetched.
+    # No external assets: inline <script>/<style> are fine, but nothing is fetched.
     assert "<link" not in html
-    assert "<script" not in html
+    assert "<script src" not in html
     assert 'src="http' not in html and 'href="http' not in html
+    assert "Content-Security-Policy" in html  # egress blocked
+
+
+def test_html_report_is_interactive():
+    result = triage(load_semgrep_file(SAMPLE), use_llm=False)
+    html = render_html(result)
+    assert 'id="q"' in html  # search box
+    assert 'data-sev=' in html  # severity toggles
+    assert 'id="classFilter"' in html and 'id="sortBy"' in html
+    assert 'data-severity=' in html and 'data-text=' in html  # per-card filter metadata
+    assert "<details class=\"card" in html  # collapsible cards
 
 
 def test_html_report_escapes_untrusted_finding_text():
