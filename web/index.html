@@ -130,6 +130,7 @@
         <label class="filelabel">📄 Upload a file<input type="file" id="file" accept=".py,.js,.jsx,.ts,.tsx,.java,.rb,.php,.go,.cs,.c,.cpp,.html,.json,.yml,.yaml,.txt"></label>
         <span id="fname">or paste code below</span>
         <button class="btn" id="example" type="button" style="margin-left:auto">Load example</button>
+        <button class="btn" id="clear" type="button">Clear</button>
         <button class="btn primary" id="analyze" type="button">Analyze</button>
       </div>
       <textarea id="code" placeholder="Paste source code here (any language)…" spellcheck="false"></textarea>
@@ -292,6 +293,14 @@
     }
     render(scan(code, currentName), currentName);
     results.scrollIntoView({behavior:"smooth", block:"nearest"});
+  });
+  document.getElementById("clear").addEventListener("click", function(){
+    document.getElementById("code").value = "";
+    document.getElementById("results").innerHTML = "";
+    document.getElementById("file").value = "";   // allow re-uploading the same file
+    currentName = "";
+    document.getElementById("fname").textContent = "or paste code below";
+    document.getElementById("code").focus();
   });
   document.getElementById("example").addEventListener("click", function(){
     currentName = "app.py"; document.getElementById("fname").textContent = "example: app.py";
