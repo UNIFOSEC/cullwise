@@ -70,6 +70,14 @@
   .kv>span:first-child{color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;padding-top:2px}
   code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;background:var(--panel2);padding:1px 6px;border-radius:6px;word-break:break-all}
   .ok{text-align:center;padding:24px;color:var(--muted)}
+  .ctx{background:var(--panel2);border:1px solid var(--border);border-radius:8px;overflow-x:auto;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px}
+  .cl{display:flex;white-space:pre;padding:1px 0}
+  .cl .ln{width:44px;flex:0 0 auto;text-align:right;padding-right:12px;color:var(--muted);user-select:none;opacity:.7}
+  .cl .lc{flex:1}
+  .cl.hit{background:rgba(220,38,38,.14);box-shadow:inset 3px 0 0 #dc2626}
+  .cl.hit .ln{color:#f87171;opacity:1;font-weight:700}
+  .fixex{margin-top:8px}
+  .fixcode{display:block;margin-top:5px;padding:8px 10px;border:1px dashed var(--border);border-radius:8px;color:var(--text);white-space:pre-wrap;line-height:1.45}
   .progress{display:flex;align-items:center;gap:12px;margin:18px 0 6px}
   .progress .track{flex:1;height:9px;background:var(--panel2);border:1px solid var(--border);border-radius:999px;overflow:hidden}
   .progress .track span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .08s linear}
@@ -209,6 +217,21 @@
   ];
   var SEV_RANK = {CRITICAL:4, HIGH:3, MEDIUM:2, LOW:1, INFO:0};
   var SEV_COLOR = {CRITICAL:"#dc2626", HIGH:"#ea580c", MEDIUM:"#ca8a04", LOW:"#2563eb", INFO:"#6b7280"};
+  // Suggested SECURE PATTERNS (examples to review — NOT a guaranteed rewrite of your code).
+  var FIX_BY_CLASS = {
+    "SQL Injection": 'cur.execute("SELECT * FROM users WHERE name = %s", (name,))   # parameterized',
+    "Hardcoded Credentials": 'API_KEY = os.environ["API_KEY"]   # load from env / secrets manager; rotate the leaked one',
+    "Weak Cryptography": 'hashlib.sha256(data).hexdigest()   # for passwords use bcrypt / argon2',
+    "Cross-Site Scripting (XSS)": 'el.textContent = userInput   // or escape/sanitize before inserting HTML; add a CSP',
+    "OS Command Injection": 'subprocess.run(["ls", target], shell=False)   # args as a list, never shell=True',
+    "Code Injection": '# avoid eval()/exec(); use ast.literal_eval() or an explicit dispatch table',
+    "Insecure Deserialization": 'yaml.safe_load(data)   # never pickle.loads()/yaml.load() on untrusted data',
+    "Improper Certificate Validation": 'requests.get(url, verify=True)   # never disable TLS verification',
+    "Server-Side Request Forgery (SSRF)": '# validate the URL against an allow-list; block internal & cloud-metadata IPs',
+    "Path Traversal": 'p = os.path.realpath(os.path.join(BASE, name)); assert p.startswith(BASE)',
+    "Insecure Randomness": 'secrets.token_hex(16)   # or crypto.getRandomValues() in JS',
+    "Security Misconfiguration": '# disable debug in production; restrict CORS to specific trusted origins'
+  };
   var FP_PATH = /(^|\/)(tests?|__tests__|fixtures?|examples?|mocks?|spec)(\/|\.)/i;
   var MAX_BYTES = 512 * 1024, MAX_LINES = 20000;
 
@@ -272,7 +295,8 @@
     step();
   }
 
-  function render(findings, filename){
+  function render(findings, filename, codeLines){
+    codeLines = codeLines || [];
     var el = document.getElementById("results");
     if(!findings.length){
       el.innerHTML = '<div class="ok">✅ No obvious issues found by the quick scan.<br><span class="muted">Remember: this heuristic demo misses what a full scanner catches — run Semgrep/CodeQL for real coverage.</span></div>';
@@ -299,14 +323,25 @@
     h += '</div>';
     findings.forEach(function(f){
       var color = SEV_COLOR[f.sev] || "#6b7280";
+      // Highlighted context: the flagged line marked, with a couple of lines around it.
+      var ctx = "";
+      if(codeLines.length){
+        var start = Math.max(1, f.line - 2), stop = Math.min(codeLines.length, f.line + 2);
+        for(var ln = start; ln <= stop; ln++){
+          ctx += '<div class="cl'+(ln===f.line?' hit':'')+'"><span class="ln">'+ln+'</span><span class="lc">'+esc(codeLines[ln-1]||"")+'</span></div>';
+        }
+      } else {
+        ctx = '<div class="cl hit"><span class="ln">'+f.line+'</span><span class="lc">'+esc(f.snippet)+'</span></div>';
+      }
+      var fixEx = FIX_BY_CLASS[f.cls]
+        ? '<div class="fixex"><span class="muted" style="font-size:12px">✅ Suggested secure pattern (an example to review — not a verified rewrite of your code):</span><code class="fixcode">'+esc(FIX_BY_CLASS[f.cls])+'</code></div>'
+        : '';
       h += '<div class="finding" style="border-left-color:'+color+'">'
         + '<div class="fhead"><span class="badge" style="background:'+color+'">'+esc(f.sev)+'</span><span class="ftitle">'+esc(f.cls)+'</span>'
         + (f.fp?'<span class="muted" style="margin-left:auto;font-size:12px">test-path · low-risk</span>':'')+'</div>'
-        + '<div class="kv"><span>Line</span><code>'+f.line+'</code></div>'
-        + '<div class="kv"><span>Rule</span><code>'+esc(f.rule)+'</code></div>'
-        + '<div class="kv"><span>CWE</span><code>'+esc(f.cwe)+'</code></div>'
-        + '<div class="kv"><span>Code</span><code>'+esc(f.snippet)+'</code></div>'
-        + '<div class="kv"><span>Fix</span><div>'+esc(f.rem)+'</div></div>'
+        + '<div class="kv"><span>Rule</span><code>'+esc(f.rule)+'</code> &middot; <code>'+esc(f.cwe)+'</code> &middot; line '+f.line+'</div>'
+        + '<div class="kv"><span>Where</span><div class="ctx">'+ctx+'</div></div>'
+        + '<div class="kv"><span>Fix</span><div>'+esc(f.rem)+fixEx+'</div></div>'
         + '</div>';
     });
     el.innerHTML = h;
@@ -337,7 +372,7 @@
     scanAsync(code, currentName, function(p){
       var bar = document.getElementById("pbar"); if(bar){ bar.style.width = p + "%"; document.getElementById("ppct").textContent = p + "%"; }
     }, function(findings){
-      render(findings, currentName);
+      render(findings, currentName, code.split(/\r?\n/));
       analyzeBtn.disabled = false; analyzeBtn.textContent = "Analyze";
     });
   });
