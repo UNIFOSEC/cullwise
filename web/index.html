@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
+<title>Cullwise — AI-assisted AppSec triage</title>
+<meta name="description" content="Cullwise turns raw security-scanner noise into a prioritized, de-duplicated, class-clustered remediation report. Try the in-browser scan — your code never leaves your machine.">
+<style>
+  :root{ --bg:#0b1120; --bg2:#0e1730; --panel:#111a2e; --panel2:#0f1830; --text:#e8eef7; --muted:#9aa8bd;
+    --border:#1e2b45; --accent:#38bdf8; --accent2:#818cf8; --ring:rgba(56,189,248,.32); --shadow:0 10px 30px rgba(0,0,0,.35); }
+  @media (prefers-color-scheme: light){ :root{ --bg:#f6f8fc; --bg2:#eef2f9; --panel:#fff; --panel2:#f4f7fc;
+    --text:#0f1a2e; --muted:#5a6b85; --border:#e3e9f2; --accent:#0284c7; --accent2:#6366f1; --ring:rgba(2,132,199,.22); --shadow:0 10px 30px rgba(15,26,46,.08); } }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+  .wrap{max-width:960px;margin:0 auto;padding:0 20px}
+  header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 0;border-bottom:1px solid var(--border)}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:-.02em;color:var(--text)}
+  .brand svg{width:30px;height:30px}
+  .top-links{display:flex;gap:16px;font-size:14px;font-weight:600}
+  .hero{padding:48px 0 8px}
+  .eyebrow{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);
+    background:var(--panel2);border:1px solid var(--border);padding:5px 11px;border-radius:999px}
+  h1{font-size:clamp(28px,5vw,42px);line-height:1.1;letter-spacing:-.02em;margin:16px 0 12px}
+  h1 .grad{background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lead{font-size:18px;color:var(--muted);max-width:60ch;margin:0 0 22px}
+  .cta{display:flex;flex-wrap:wrap;gap:12px}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:11px 18px;border-radius:11px;font-weight:600;font-size:15px;
+    border:1px solid var(--border);background:var(--panel);color:var(--text);cursor:pointer;box-shadow:var(--shadow)}
+  .btn:hover{border-color:var(--accent);text-decoration:none}
+  .btn.primary{background:linear-gradient(90deg,var(--accent),var(--accent2));color:#fff;border:none}
+  section{padding:40px 0}
+  h2{font-size:24px;letter-spacing:-.01em;margin:0 0 8px}
+  .kicker{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+  .muted{color:var(--muted)}
+  .what{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:20px}
+  .what .card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+  .what .card h3{margin:0 0 6px;font-size:16px;display:flex;align-items:center;gap:8px}
+  .what .ico{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;font-size:16px;background:linear-gradient(135deg,var(--accent),var(--accent2))}
+  .steps{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;color:var(--muted);font-size:14px}
+  .steps span{background:var(--panel2);border:1px solid var(--border);border-radius:999px;padding:6px 12px}
+  /* analyzer */
+  .tool{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:20px;box-shadow:var(--shadow)}
+  .privacy{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--muted);background:var(--panel2);
+    border:1px solid var(--border);border-radius:10px;padding:9px 12px;margin-bottom:14px}
+  .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px}
+  textarea{width:100%;min-height:200px;resize:vertical;background:var(--panel2);color:var(--text);border:1px solid var(--border);
+    border-radius:10px;padding:12px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.5}
+  .filelabel{display:inline-flex;align-items:center;gap:7px;padding:8px 13px;border:1px solid var(--border);border-radius:9px;
+    background:var(--panel2);cursor:pointer;font-size:14px;font-weight:600}
+  .filelabel:hover{border-color:var(--accent)}
+  input[type=file]{display:none}
+  #fname{font-size:13px;color:var(--muted)}
+  /* results */
+  #results{margin-top:22px}
+  .summary{font-size:16px;margin:0 0 16px} .summary b{color:var(--accent)}
+  .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}
+  .tile{background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center}
+  .tile-v{font-size:26px;font-weight:800;line-height:1} .tile-l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:5px}
+  .classes{background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:10px 16px;margin-bottom:18px}
+  .crow{display:grid;grid-template-columns:210px 1fr 36px;align-items:center;gap:12px;padding:6px 0}
+  .cname{font-weight:600;font-size:14px} .cbar{background:var(--panel);border-radius:999px;height:8px;overflow:hidden}
+  .cbar span{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2))} .ccount{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+  .finding{background:var(--panel);border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:12px;padding:14px 16px;margin:10px 0}
+  .fhead{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .badge{color:#fff;font-size:11px;font-weight:700;letter-spacing:.05em;padding:3px 9px;border-radius:999px}
+  .ftitle{font-weight:700;font-size:15px}
+  .kv{display:grid;grid-template-columns:110px 1fr;gap:10px;font-size:13.5px;padding:3px 0}
+  .kv>span:first-child{color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;padding-top:2px}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;background:var(--panel2);padding:1px 6px;border-radius:6px;word-break:break-all}
+  .ok{text-align:center;padding:24px;color:var(--muted)}
+  footer{border-top:1px solid var(--border);padding:28px 0;color:var(--muted);font-size:13px;margin-top:20px}
+  .disclaimer{font-size:12.5px;color:var(--muted);margin-top:12px}
+  @media(max-width:720px){ .what{grid-template-columns:1fr} .tiles{grid-template-columns:repeat(2,1fr)} .crow{grid-template-columns:130px 1fr 30px} .kv{grid-template-columns:1fr;gap:1px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="#top">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M12 2 4 5v6c0 5 3.4 8.5 8 11 4.6-2.5 8-6 8-11V5l-8-3Z" fill="url(#g)" opacity=".2"/>
+        <path d="M12 2 4 5v6c0 5 3.4 8.5 8 11 4.6-2.5 8-6 8-11V5l-8-3Z" stroke="url(#g)" stroke-width="1.5"/>
+        <path d="m8.5 12 2.3 2.3L15.7 9.4" stroke="url(#g)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        <defs><linearGradient id="g" x1="0" y1="0" x2="24" y2="24"><stop stop-color="#38bdf8"/><stop offset="1" stop-color="#818cf8"/></linearGradient></defs>
+      </svg>
+      Cullwise
+    </a>
+    <nav class="top-links">
+      <a href="#try">Try it</a>
+      <a href="sample.html">Sample report</a>
+      <a href="https://github.com/UNIFOSEC/cullwise" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://unifosec.github.io/">Portfolio</a>
+    </nav>
+  </header>
+
+  <a id="top"></a>
+  <section class="hero">
+    <span class="eyebrow">Application Security · SARIF · AI</span>
+    <h1>Turn scanner noise into a <span class="grad">prioritized fix list.</span></h1>
+    <p class="lead">Cullwise is an AI-assisted application-security triage tool. It takes the flood of findings from code scanners, <b>de-duplicates</b> them, <b>clusters them into vulnerability classes</b>, and <b>prioritizes</b> what actually matters — optionally using an LLM to judge severity, flag false positives, and write remediation.</p>
+    <div class="cta">
+      <a class="btn primary" href="#try">Scan your code →</a>
+      <a class="btn" href="sample.html">See a sample report</a>
+      <a class="btn" href="https://github.com/UNIFOSEC/cullwise" target="_blank" rel="noopener">View on GitHub</a>
+    </div>
+  </section>
+
+  <section id="what">
+    <div class="kicker">What it is</div>
+    <h2>Less noise. Fewer tickets. Faster fixes.</h2>
+    <p class="muted" style="max-width:64ch">Security scanners (Semgrep, CodeQL, Trivy…) produce hundreds of findings with heavy duplication and false positives. Cullwise automates the first, most tedious pass of triage so engineers see signal, not spam.</p>
+    <div class="what">
+      <div class="card"><h3><span class="ico">🧭</span> Ingest anything</h3><p class="muted">Reads Semgrep JSON or <b>SARIF 2.1.0</b> — the standard every major scanner emits — so one tool covers the ecosystem.</p></div>
+      <div class="card"><h3><span class="ico">🧬</span> Cluster by class</h3><p class="muted">Groups findings into vulnerability <b>classes</b> (SQL Injection, Hardcoded Credentials, Weak Crypto…) so you fix a category, not 30 tickets.</p></div>
+      <div class="card"><h3><span class="ico">🤖</span> Prioritize with AI</h3><p class="muted">Optionally uses Claude to adjust severity, flag likely false positives, and suggest fixes — hardened against prompt injection.</p></div>
+    </div>
+    <div class="steps">
+      <span>① Scan with your tool → SARIF</span><span>② Cullwise triages &amp; clusters</span><span>③ Markdown / HTML / SARIF out</span><span>④ Into GitHub Code Scanning</span>
+    </div>
+  </section>
+
+  <section id="try">
+    <div class="kicker">Try it — no signup</div>
+    <h2>Scan code in your browser</h2>
+    <div class="privacy">🔒 <span>Your code is analyzed <b>entirely in your browser</b> — nothing is uploaded to any server. This is a lightweight heuristic demo; for full-depth analysis use the Semgrep + SARIF pipeline.</span></div>
+    <div class="tool">
+      <div class="toolbar">
+        <label class="filelabel">📄 Upload a file<input type="file" id="file" accept=".py,.js,.jsx,.ts,.tsx,.java,.rb,.php,.go,.cs,.c,.cpp,.html,.json,.yml,.yaml,.txt"></label>
+        <span id="fname">or paste code below</span>
+        <button class="btn" id="example" type="button" style="margin-left:auto">Load example</button>
+        <button class="btn primary" id="analyze" type="button">Analyze</button>
+      </div>
+      <textarea id="code" placeholder="Paste source code here (any language)…" spellcheck="false"></textarea>
+      <div id="results"></div>
+      <p class="disclaimer">Heuristic pattern-matching only (no data-flow analysis). It will miss things a real scanner catches and may over-report — it is a demo of the Cullwise triage experience, not a substitute for Semgrep/CodeQL.</p>
+    </div>
+  </section>
+
+  <footer>
+    Cullwise · AI-assisted AppSec triage · <a href="https://github.com/UNIFOSEC/cullwise" target="_blank" rel="noopener">source</a> · <a href="https://unifosec.github.io/">by Jose Ernest</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  // ---- ruleset (heuristic, CWE-tagged). No code is ever executed — pure regex over text. ----
+  var RULES = [
+    {id:"private-key-in-source", cls:"Hardcoded Credentials", cwe:"CWE-798", sev:"CRITICAL",
+     re:/-----BEGIN (?:RSA |EC |OPENSSH |DSA |PGP )?PRIVATE KEY-----/,
+     rem:"Remove private keys from source and rotate them immediately; load from a secret store."},
+    {id:"hardcoded-secret", cls:"Hardcoded Credentials", cwe:"CWE-798", sev:"HIGH",
+     re:/(password|passwd|pwd|secret|api[_-]?key|apikey|access[_-]?token|auth[_-]?token|client[_-]?secret)\s*[:=]\s*["'][^"'\s]{6,}["']/i,
+     rem:"Load secrets from a secrets manager / environment variables, never from source."},
+    {id:"sql-injection", cls:"SQL Injection", cwe:"CWE-89", sev:"HIGH",
+     re:/(?:execute|query|cursor\.execute|db\.query|rawQuery)\s*\(\s*["'`][^"'`]*(?:SELECT|INSERT|UPDATE|DELETE)[^"'`]*["'`]?\s*(?:%|\+|\.format\(|\$\{)/i,
+     rem:"Use parameterized queries / prepared statements; never build SQL by concatenation."},
+    {id:"sql-injection-concat", cls:"SQL Injection", cwe:"CWE-89", sev:"HIGH",
+     re:/(?:SELECT|INSERT INTO|UPDATE|DELETE FROM)\b[^;\n]*["'`]\s*(?:\+|%|\.format\(|\$\{)/i,
+     rem:"Use parameterized queries / prepared statements; never build SQL by concatenation."},
+    {id:"weak-hash", cls:"Weak Cryptography", cwe:"CWE-327", sev:"MEDIUM",
+     re:/hashlib\.(?:md5|sha1)\b|\bmd5\s*\(|MessageDigest\.getInstance\(\s*["'](?:MD5|SHA-?1)["']|createHash\(\s*["'](?:md5|sha1)["']/i,
+     rem:"Use SHA-256+ for integrity, and bcrypt/scrypt/argon2 for passwords."},
+    {id:"weak-cipher", cls:"Weak Cryptography", cwe:"CWE-327", sev:"MEDIUM",
+     re:/\b(?:DES|RC4|3DES)\b|Cipher\.getInstance\(\s*["'][^"']*ECB/i,
+     rem:"Use AES-GCM; avoid DES/RC4/3DES and ECB mode."},
+    {id:"xss-innerhtml", cls:"Cross-Site Scripting (XSS)", cwe:"CWE-79", sev:"HIGH",
+     re:/\.(?:innerHTML|outerHTML)\s*(?:\+?=)\s*[^;]*(?:\+|\$\{|`)/,
+     rem:"Use textContent, or sanitize/auto-escape before inserting HTML; add a strict CSP."},
+    {id:"xss-raw-render", cls:"Cross-Site Scripting (XSS)", cwe:"CWE-79", sev:"HIGH",
+     re:/dangerouslySetInnerHTML|document\.write\s*\(|render_template_string\s*\([^)]*(?:\+|\$\{|request)/,
+     rem:"Avoid raw HTML injection; escape/sanitize untrusted input."},
+    {id:"command-injection", cls:"OS Command Injection", cwe:"CWE-78", sev:"HIGH",
+     re:/os\.system\s*\(|subprocess\.(?:call|run|Popen)\([^)]*shell\s*=\s*True|child_process\.exec\s*\(|Runtime\.getRuntime\(\)\.exec\s*\(/,
+     rem:"Avoid the shell; pass arguments as a list/array and validate against an allow-list."},
+    {id:"code-injection-eval", cls:"Code Injection", cwe:"CWE-95", sev:"HIGH",
+     re:/\beval\s*\(|new Function\s*\(|\bexec\s*\(/,
+     rem:"Never eval/exec dynamic input; use a safe parser or explicit dispatch."},
+    {id:"insecure-deserialization", cls:"Insecure Deserialization", cwe:"CWE-502", sev:"HIGH",
+     re:/pickle\.loads?\s*\(|cPickle\.|yaml\.load\s*\((?![^)]*Safe)|ObjectInputStream\s*\(|Marshal\.load/,
+     rem:"Do not deserialize untrusted data; use safe loaders (e.g. yaml.safe_load) or signed, schema-validated formats."},
+    {id:"tls-verification-disabled", cls:"Improper Certificate Validation", cwe:"CWE-295", sev:"HIGH",
+     re:/verify\s*=\s*False|rejectUnauthorized\s*:\s*false|CURLOPT_SSL_VERIFYPEER\s*,\s*(?:0|false)|InsecureSkipVerify\s*:\s*true/i,
+     rem:"Never disable TLS certificate verification; fix the trust chain instead."},
+    {id:"ssrf", cls:"Server-Side Request Forgery (SSRF)", cwe:"CWE-918", sev:"MEDIUM",
+     re:/(?:requests\.(?:get|post)|urllib\.request\.urlopen|fetch|axios\.get|http\.get)\s*\([^)]*(?:request|req\.|input\(|params|user)/i,
+     rem:"Validate outbound URLs against an allow-list; block internal ranges and cloud metadata endpoints."},
+    {id:"path-traversal", cls:"Path Traversal", cwe:"CWE-22", sev:"MEDIUM",
+     re:/(?:open|readFile|readFileSync|File|fopen)\s*\([^)]*(?:\+|\$\{|%s|request|req\.|input\()/,
+     rem:"Canonicalize and validate paths against an allow-list base directory; reject '..' segments."},
+    {id:"weak-randomness", cls:"Insecure Randomness", cwe:"CWE-330", sev:"LOW",
+     re:/Math\.random\s*\(\)|(?:^|[^_.])random\.(?:random|randint|choice)\s*\(/,
+     rem:"Use a CSPRNG (crypto.getRandomValues, Python secrets, java.security.SecureRandom) for security-sensitive values."},
+    {id:"debug-enabled", cls:"Security Misconfiguration", cwe:"CWE-489", sev:"LOW",
+     re:/DEBUG\s*=\s*True|app\.run\([^)]*debug\s*=\s*True/,
+     rem:"Disable debug mode in production; it can leak stack traces and enable code execution."},
+    {id:"cors-wildcard", cls:"Security Misconfiguration", cwe:"CWE-942", sev:"MEDIUM",
+     re:/Access-Control-Allow-Origin["'\s:,]+\*|origin\s*:\s*["']\*["']/i,
+     rem:"Restrict CORS to specific trusted origins instead of '*'."}
+  ];
+  var SEV_RANK = {CRITICAL:4, HIGH:3, MEDIUM:2, LOW:1, INFO:0};
+  var SEV_COLOR = {CRITICAL:"#dc2626", HIGH:"#ea580c", MEDIUM:"#ca8a04", LOW:"#2563eb", INFO:"#6b7280"};
+  var FP_PATH = /(^|\/)(tests?|__tests__|fixtures?|examples?|mocks?|spec)(\/|\.)/i;
+  var MAX_BYTES = 512 * 1024, MAX_LINES = 20000;
+
+  function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+
+  function scan(code, filename){
+    var lines = code.split(/\r?\n/), out = [], seen = {};
+    var inTest = filename && FP_PATH.test(filename);
+    var n = Math.min(lines.length, MAX_LINES);
+    for(var i=0;i<n;i++){
+      var line = lines[i];
+      if(line.length > 2000) continue;         // skip pathological lines
+      for(var r=0;r<RULES.length;r++){
+        var rule = RULES[r];
+        if(rule.re.test(line)){
+          var key = rule.id + ":" + (i+1);
+          if(seen[key]) continue; seen[key] = 1;   // dedupe
+          var sev = rule.sev;
+          if(inTest && SEV_RANK[sev] > SEV_RANK.LOW) sev = "LOW";
+          out.push({rule:rule.id, cls:rule.cls, cwe:rule.cwe, sev:sev, reported:rule.sev,
+                    line:i+1, snippet:line.trim().slice(0,200), rem:rule.rem, fp:inTest});
+        }
+      }
+    }
+    out.sort(function(a,b){ if(a.fp!==b.fp) return a.fp?1:-1;
+      var d=SEV_RANK[b.sev]-SEV_RANK[a.sev]; return d!==0?d:a.line-b.line; });
+    return out;
+  }
+
+  function render(findings, filename){
+    var el = document.getElementById("results");
+    if(!findings.length){
+      el.innerHTML = '<div class="ok">✅ No obvious issues found by the quick scan.<br><span class="muted">Remember: this heuristic demo misses what a full scanner catches — run Semgrep/CodeQL for real coverage.</span></div>';
+      return;
+    }
+    var classes = {}, fp = 0;
+    findings.forEach(function(f){ classes[f.cls]=(classes[f.cls]||0)+1; if(f.fp) fp++; });
+    var top = Math.max.apply(null, Object.keys(classes).map(function(k){return classes[k];}));
+    var actionable = findings.length - fp;
+
+    var h = '';
+    h += '<p class="summary"><b>'+findings.length+'</b> findings &rarr; <b>'+actionable+'</b> actionable'+(fp?(' ('+fp+' likely low-risk / test-path)'):'')+(filename?(' in <code>'+esc(filename)+'</code>'):'')+'.</p>';
+    h += '<div class="tiles">'
+      + '<div class="tile"><div class="tile-v" style="color:#f97316">'+findings.length+'</div><div class="tile-l">Findings</div></div>'
+      + '<div class="tile"><div class="tile-v" style="color:#38bdf8">'+Object.keys(classes).length+'</div><div class="tile-l">Vuln classes</div></div>'
+      + '<div class="tile"><div class="tile-v" style="color:#ea580c">'+actionable+'</div><div class="tile-l">Actionable</div></div>'
+      + '<div class="tile"><div class="tile-v" style="color:#64748b">'+fp+'</div><div class="tile-l">Low-risk</div></div>'
+      + '</div>';
+    h += '<div class="classes">';
+    Object.keys(classes).sort(function(a,b){return classes[b]-classes[a];}).forEach(function(c){
+      var pct = Math.round(100*classes[c]/top);
+      h += '<div class="crow"><div class="cname">'+esc(c)+'</div><div class="cbar"><span style="width:'+pct+'%"></span></div><div class="ccount">'+classes[c]+'</div></div>';
+    });
+    h += '</div>';
+    findings.forEach(function(f){
+      var color = SEV_COLOR[f.sev] || "#6b7280";
+      h += '<div class="finding" style="border-left-color:'+color+'">'
+        + '<div class="fhead"><span class="badge" style="background:'+color+'">'+esc(f.sev)+'</span><span class="ftitle">'+esc(f.cls)+'</span>'
+        + (f.fp?'<span class="muted" style="margin-left:auto;font-size:12px">test-path · low-risk</span>':'')+'</div>'
+        + '<div class="kv"><span>Line</span><code>'+f.line+'</code></div>'
+        + '<div class="kv"><span>Rule</span><code>'+esc(f.rule)+'</code></div>'
+        + '<div class="kv"><span>CWE</span><code>'+esc(f.cwe)+'</code></div>'
+        + '<div class="kv"><span>Code</span><code>'+esc(f.snippet)+'</code></div>'
+        + '<div class="kv"><span>Fix</span><div>'+esc(f.rem)+'</div></div>'
+        + '</div>';
+    });
+    el.innerHTML = h;
+  }
+
+  var currentName = "";
+  document.getElementById("file").addEventListener("change", function(e){
+    var f = e.target.files && e.target.files[0]; if(!f) return;
+    if(f.size > MAX_BYTES){ alert("File too large for the browser demo (max 512 KB). Paste a smaller snippet."); return; }
+    var reader = new FileReader();
+    reader.onload = function(){ document.getElementById("code").value = String(reader.result||""); currentName = f.name;
+      document.getElementById("fname").textContent = f.name; };
+    reader.readAsText(f);   // read as TEXT only — never executed
+  });
+  document.getElementById("analyze").addEventListener("click", function(){
+    var code = document.getElementById("code").value || "";
+    render(scan(code, currentName), currentName);
+    document.getElementById("results").scrollIntoView({behavior:"smooth", block:"nearest"});
+  });
+  document.getElementById("example").addEventListener("click", function(){
+    currentName = "app.py"; document.getElementById("fname").textContent = "example: app.py";
+    document.getElementById("code").value =
+      'import hashlib, os, sqlite3\n' +
+      'from flask import request, Flask\n\n' +
+      'app = Flask(__name__)\n' +
+      'API_KEY = "demoFAKEkey_not_a_real_secret_0123456789"\n\n' +
+      'def get_user(conn):\n' +
+      '    name = request.args["name"]\n' +
+      '    cur = conn.cursor()\n' +
+      '    cur.execute("SELECT * FROM users WHERE name = \'%s\'" % name)  # SQLi\n' +
+      '    return cur.fetchall()\n\n' +
+      'def token(pw):\n' +
+      '    return hashlib.md5(pw.encode()).hexdigest()  # weak hash\n\n' +
+      '@app.route("/hi")\n' +
+      'def hi():\n' +
+      '    return "<h1>Hi " + request.args["user"] + "</h1>"  # XSS\n\n' +
+      'if __name__ == "__main__":\n' +
+      '    app.run(debug=True)\n';
+  });
+})();
+</script>
+</body>
+</html>

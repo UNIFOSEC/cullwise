@@ -37,15 +37,16 @@ jobs:
         run: |
           semgrep scan --config=auto --json --output findings.json examples/vulnerable_demo || true
 
-      - name: Build dashboard (fall back to bundled sample if scan is empty)
+      - name: Assemble site (landing page + analyzer + sample report)
         run: |
           mkdir -p site
+          cp web/index.html site/index.html          # landing page + in-browser analyzer
           if [ -s findings.json ] && python -c "import json,sys; sys.exit(0 if json.load(open('findings.json')).get('results') else 1)"; then
-            echo "Using live Semgrep findings."
-            cullwise triage findings.json --out site/index.html
+            echo "Using live Semgrep findings for the sample report."
+            cullwise triage findings.json --out site/sample.html
           else
             echo "No live findings; using bundled sample."
-            cullwise triage examples/semgrep-sample.json --out site/index.html
+            cullwise triage examples/semgrep-sample.json --out site/sample.html
           fi
 
       - name: Upload Pages artifact
