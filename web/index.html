@@ -290,7 +290,7 @@
     currentName = "app.py"; document.getElementById("fname").textContent = "example: app.py";
     document.getElementById("code").value =
       'import hashlib, os, sqlite3\n' +
-      'from flask import request, Flask\n\n' +
+      'from flask import request, Flask, render_template_string\n\n' +
       'app = Flask(__name__)\n' +
       'API_KEY = "demoFAKEkey_not_a_real_secret_0123456789"\n\n' +
       'def get_user(conn):\n' +
@@ -302,7 +302,7 @@
       '    return hashlib.md5(pw.encode()).hexdigest()  # weak hash\n\n' +
       '@app.route("/hi")\n' +
       'def hi():\n' +
-      '    return "<h1>Hi " + request.args["user"] + "</h1>"  # XSS\n\n' +
+      '    return render_template_string("<h1>Hi " + request.args["user"] + "</h1>")  # XSS\n\n' +
       'if __name__ == "__main__":\n' +
       '    app.run(debug=True)\n';
   });
