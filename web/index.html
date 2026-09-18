@@ -70,6 +70,12 @@
   .kv>span:first-child{color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;padding-top:2px}
   code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;background:var(--panel2);padding:1px 6px;border-radius:6px;word-break:break-all}
   .ok{text-align:center;padding:24px;color:var(--muted)}
+  .progress{display:flex;align-items:center;gap:12px;margin:18px 0 6px}
+  .progress .track{flex:1;height:9px;background:var(--panel2);border:1px solid var(--border);border-radius:999px;overflow:hidden}
+  .progress .track span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .08s linear}
+  .progress .pct{font-size:12.5px;color:var(--muted);min-width:38px;text-align:right;font-variant-numeric:tabular-nums}
+  .analyzing{text-align:center;font-size:13px;color:var(--muted)}
+  .btn[disabled]{opacity:.6;cursor:default}
   footer{border-top:1px solid var(--border);padding:28px 0;color:var(--muted);font-size:13px;margin-top:20px}
   .disclaimer{font-size:12.5px;color:var(--muted);margin-top:12px}
   @media(max-width:720px){ .what{grid-template-columns:1fr} .tiles{grid-template-columns:repeat(2,1fr)} .crow{grid-template-columns:130px 1fr 30px} .kv{grid-template-columns:1fr;gap:1px} }
@@ -127,7 +133,7 @@
     <div class="privacy">🔒 <span>Your code is analyzed <b>entirely in your browser</b> — nothing is uploaded to any server. This is a lightweight heuristic demo; for full-depth analysis use the Semgrep + SARIF pipeline.</span></div>
     <div class="tool">
       <div class="toolbar">
-        <label class="filelabel">📄 Upload a file<input type="file" id="file" accept=".py,.js,.jsx,.ts,.tsx,.java,.rb,.php,.go,.cs,.c,.cpp,.html,.json,.yml,.yaml,.txt"></label>
+        <label class="filelabel">📄 Upload a file<input type="file" id="file"></label>
         <span id="fname">or paste code below</span>
         <button class="btn" id="example" type="button" style="margin-left:auto">Load example</button>
         <button class="btn" id="clear" type="button">Clear</button>
@@ -233,6 +239,39 @@
     return out;
   }
 
+  // Async, chunked scan so the progress bar can animate (a sync loop would freeze the UI).
+  function scanAsync(code, filename, onProgress, onDone){
+    var lines = code.split(/\r?\n/), out = [], seen = {};
+    var inTest = filename && FP_PATH.test(filename);
+    var total = Math.min(lines.length, MAX_LINES), i = 0, CHUNK = 800;
+    function step(){
+      var end = Math.min(i + CHUNK, total);
+      for(; i < end; i++){
+        var line = lines[i];
+        if(line.length > 2000) continue;
+        for(var r = 0; r < RULES.length; r++){
+          var rule = RULES[r];
+          if(rule.re.test(line)){
+            var key = rule.id + ":" + (i+1);
+            if(seen[key]) continue; seen[key] = 1;
+            var sev = rule.sev;
+            if(inTest && SEV_RANK[sev] > SEV_RANK.LOW) sev = "LOW";
+            out.push({rule:rule.id, cls:rule.cls, cwe:rule.cwe, sev:sev, reported:rule.sev,
+                      line:i+1, snippet:line.trim().slice(0,200), rem:rule.rem, fp:inTest});
+          }
+        }
+      }
+      onProgress(total ? Math.round(100 * i / total) : 100);
+      if(i < total){ setTimeout(step, 0); }         // yield so the browser can repaint the bar
+      else {
+        out.sort(function(a,b){ if(a.fp!==b.fp) return a.fp?1:-1;
+          var d = SEV_RANK[b.sev]-SEV_RANK[a.sev]; return d!==0?d:a.line-b.line; });
+        onDone(out);
+      }
+    }
+    step();
+  }
+
   function render(findings, filename){
     var el = document.getElementById("results");
     if(!findings.length){
@@ -282,7 +321,8 @@
       document.getElementById("fname").textContent = f.name; };
     reader.readAsText(f);   // read as TEXT only — never executed
   });
-  document.getElementById("analyze").addEventListener("click", function(){
+  var analyzeBtn = document.getElementById("analyze");
+  analyzeBtn.addEventListener("click", function(){
     var code = document.getElementById("code").value || "";
     var results = document.getElementById("results");
     if(!code.trim()){
@@ -291,8 +331,15 @@
       document.getElementById("code").focus();
       return;
     }
-    render(scan(code, currentName), currentName);
+    analyzeBtn.disabled = true; analyzeBtn.textContent = "Analyzing…";
+    results.innerHTML = '<div class="progress"><div class="track"><span id="pbar"></span></div><span class="pct" id="ppct">0%</span></div><div class="analyzing">Scanning locally in your browser…</div>';
     results.scrollIntoView({behavior:"smooth", block:"nearest"});
+    scanAsync(code, currentName, function(p){
+      var bar = document.getElementById("pbar"); if(bar){ bar.style.width = p + "%"; document.getElementById("ppct").textContent = p + "%"; }
+    }, function(findings){
+      render(findings, currentName);
+      analyzeBtn.disabled = false; analyzeBtn.textContent = "Analyze";
+    });
   });
   document.getElementById("clear").addEventListener("click", function(){
     document.getElementById("code").value = "";
