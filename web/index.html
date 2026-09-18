@@ -283,8 +283,15 @@
   });
   document.getElementById("analyze").addEventListener("click", function(){
     var code = document.getElementById("code").value || "";
+    var results = document.getElementById("results");
+    if(!code.trim()){
+      results.innerHTML = '<div class="ok">✍️ Paste your source code above, or upload a file — then click Analyze.</div>';
+      results.scrollIntoView({behavior:"smooth", block:"nearest"});
+      document.getElementById("code").focus();
+      return;
+    }
     render(scan(code, currentName), currentName);
-    document.getElementById("results").scrollIntoView({behavior:"smooth", block:"nearest"});
+    results.scrollIntoView({behavior:"smooth", block:"nearest"});
   });
   document.getElementById("example").addEventListener("click", function(){
     currentName = "app.py"; document.getElementById("fname").textContent = "example: app.py";
