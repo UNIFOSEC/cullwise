@@ -45,6 +45,13 @@
   .tool{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:20px;box-shadow:var(--shadow)}
   .privacy{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--muted);background:var(--panel2);
     border:1px solid var(--border);border-radius:10px;padding:9px 12px;margin-bottom:14px}
+  .specs{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
+  .specs > div{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:10px 13px;font-size:13px}
+  .specs b{color:var(--text)} .specs > div > b{display:block;font-size:12.5px;margin-bottom:3px}
+  .specs span{color:var(--muted);line-height:1.5}
+  .meter{display:flex;justify-content:space-between;gap:12px;font-size:12px;color:var(--muted);margin:7px 2px 0}
+  .meter .warn{color:#ea580c;font-weight:600}
+  @media(max-width:640px){ .specs{grid-template-columns:1fr} }
   .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px}
   textarea{width:100%;min-height:200px;resize:vertical;background:var(--panel2);color:var(--text);border:1px solid var(--border);
     border-radius:10px;padding:12px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.5}
@@ -139,7 +146,12 @@
   <section id="try">
     <div class="kicker">Try it — no signup</div>
     <h2>Scan code in your browser</h2>
-    <div class="privacy">🔒 <span>Your code is analyzed <b>entirely in your browser</b> — nothing is uploaded to any server. This is a lightweight heuristic demo; for full-depth analysis use the Semgrep + SARIF pipeline.</span></div>
+    <div class="specs">
+      <div><b>🌐 Languages</b><span>Python · JavaScript/TypeScript · Java · Go · PHP · Ruby · C# — any text/source file works</span></div>
+      <div><b>📏 Limits</b><span>Up to <b>512&nbsp;KB</b> and <b>~20,000 lines</b> per scan (larger code → use the CLI / CI pipeline)</span></div>
+      <div><b>🔎 Checks</b><span><b><span id="checkCount">28</span></b> heuristic rules — injection, secrets, weak crypto, XSS, SSRF, XXE, auth, deserialization, misconfig</span></div>
+      <div><b>🔒 Privacy</b><span>Runs <b>100% in your browser</b> — no upload, no network call, no logging</span></div>
+    </div>
     <div class="tool">
       <div class="toolbar">
         <label class="filelabel">📄 Upload a file<input type="file" id="file"></label>
@@ -148,7 +160,8 @@
         <button class="btn" id="clear" type="button">Clear</button>
         <button class="btn primary" id="analyze" type="button">Analyze</button>
       </div>
-      <textarea id="code" placeholder="Paste source code here (any language)…" spellcheck="false"></textarea>
+      <textarea id="code" placeholder="Paste source code — Python, JavaScript, Java, Go, PHP, Ruby, C#… (up to ~20,000 lines). Nothing leaves your browser." spellcheck="false"></textarea>
+      <div class="meter"><span id="cmeter">0 lines · 0 KB</span><span id="cmeterwarn"></span></div>
       <div id="results"></div>
       <p class="disclaimer">Heuristic pattern-matching only (no data-flow analysis). It will miss things a real scanner catches and may over-report — it is a demo of the Cullwise triage experience, not a substitute for Semgrep/CodeQL.</p>
     </div>
@@ -389,12 +402,32 @@
   }
 
   var currentName = "";
+  // Live size meter + dynamic check count so users know what/how-much before analyzing.
+  var codeEl = document.getElementById("code");
+  var meterEl = document.getElementById("cmeter"), meterWarn = document.getElementById("cmeterwarn");
+  var checkCountEl = document.getElementById("checkCount"); if(checkCountEl) checkCountEl.textContent = RULES.length;
+  function updateMeter(){
+    var v = codeEl.value || "";
+    var lines = v ? v.split(/\r?\n/).length : 0;
+    var bytes = (typeof Blob !== "undefined") ? new Blob([v]).size : v.length;
+    var kb = bytes / 1024;
+    if(meterEl) meterEl.textContent = lines.toLocaleString() + " lines · " + kb.toFixed(kb < 10 ? 1 : 0) + " KB";
+    var over = [];
+    if(lines > MAX_LINES) over.push("beyond ~" + MAX_LINES.toLocaleString() + " lines");
+    if(bytes > MAX_BYTES) over.push("over 512 KB");
+    if(meterWarn){
+      meterWarn.textContent = over.length ? ("⚠ " + over.join(" · ") + " — the excess is skipped; use the CLI for large code") : "";
+      meterWarn.className = over.length ? "warn" : "";
+    }
+  }
+  codeEl.addEventListener("input", updateMeter);
+
   document.getElementById("file").addEventListener("change", function(e){
     var f = e.target.files && e.target.files[0]; if(!f) return;
     if(f.size > MAX_BYTES){ alert("File too large for the browser demo (max 512 KB). Paste a smaller snippet."); return; }
     var reader = new FileReader();
     reader.onload = function(){ document.getElementById("code").value = String(reader.result||""); currentName = f.name;
-      document.getElementById("fname").textContent = f.name; };
+      document.getElementById("fname").textContent = f.name; updateMeter(); };
     reader.readAsText(f);   // read as TEXT only — never executed
   });
   var analyzeBtn = document.getElementById("analyze");
@@ -433,6 +466,7 @@
     currentName = "";
     document.getElementById("fname").textContent = "or paste code below";
     document.getElementById("code").focus();
+    updateMeter();
   });
   document.getElementById("example").addEventListener("click", function(){
     currentName = "app.py"; document.getElementById("fname").textContent = "example: app.py";
@@ -453,6 +487,7 @@
       '    return render_template_string("<h1>Hi " + request.args["user"] + "</h1>")  # XSS\n\n' +
       'if __name__ == "__main__":\n' +
       '    app.run(debug=True)\n';
+    updateMeter();
   });
 })();
 </script>
