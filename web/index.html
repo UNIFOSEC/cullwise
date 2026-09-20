@@ -214,7 +214,40 @@
      rem:"Disable debug mode in production; it can leak stack traces and enable code execution."},
     {id:"cors-wildcard", cls:"Security Misconfiguration", cwe:"CWE-942", sev:"MEDIUM",
      re:/Access-Control-Allow-Origin["'\s:,]+\*|origin\s*:\s*["']\*["']/i,
-     rem:"Restrict CORS to specific trusted origins instead of '*'."}
+     rem:"Restrict CORS to specific trusted origins instead of '*'."},
+    {id:"cloud-provider-token", cls:"Hardcoded Credentials", cwe:"CWE-798", sev:"CRITICAL",
+     re:/AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{36}|xox[baprs]-[0-9A-Za-z-]{10,}|AIza[0-9A-Za-z_\-]{35}/,
+     rem:"A cloud/service provider token appears in source — remove it, rotate it, and store it in a secrets manager."},
+    {id:"jwt-alg-none", cls:"Broken Authentication", cwe:"CWE-347", sev:"HIGH",
+     re:/alg(?:orithm)?["'\s:=]+none|algorithms?\s*[=:]\s*\[\s*["']none["']/i,
+     rem:"Never accept the 'none' JWT algorithm; pin an allow-list of strong algorithms and verify the signature."},
+    {id:"jwt-hardcoded-secret", cls:"Broken Authentication", cwe:"CWE-798", sev:"HIGH",
+     re:/jwt\.(?:sign|encode|verify|decode)\s*\([^)]*,\s*["'][^"']{6,}["']/,
+     rem:"Load the JWT signing secret from a secrets manager / environment; never hardcode it."},
+    {id:"nosql-injection", cls:"NoSQL Injection", cwe:"CWE-943", sev:"HIGH",
+     re:/\$where\s*:|\.find\(\s*\{[^}]*(?:req\.|request|params|input\()/i,
+     rem:"Pass values as query parameters; never build NoSQL queries from raw input or use $where with user data."},
+    {id:"xxe", cls:"XML External Entity (XXE)", cwe:"CWE-611", sev:"HIGH",
+     re:/resolve_entities\s*=\s*True|external-general-entities|DocumentBuilderFactory|XMLReaderFactory|noent\s*=\s*True/i,
+     rem:"Disable external entity resolution and DTDs in the XML parser."},
+    {id:"open-redirect", cls:"Open Redirect", cwe:"CWE-601", sev:"MEDIUM",
+     re:/redirect\s*\(\s*(?:request|req\.|params|input\()/i,
+     rem:"Redirect only to allow-listed destinations; never to a raw user-supplied URL."},
+    {id:"sensitive-logging", cls:"Sensitive Data Exposure", cwe:"CWE-532", sev:"MEDIUM",
+     re:/(?:console\.log|logger?\.(?:info|debug|warn|error)|print|System\.out\.print)\s*\([^)]*(?:password|passwd|secret|api[_-]?key|token|ssn)/i,
+     rem:"Never log secrets or PII; redact sensitive fields before logging."},
+    {id:"cleartext-http", cls:"Cleartext Transmission", cwe:"CWE-319", sev:"LOW",
+     re:/["']http:\/\/(?!localhost|127\.0\.0\.1|0\.0\.0\.0)/,
+     rem:"Use https:// for external endpoints; enforce TLS in transit."},
+    {id:"insecure-temp-file", cls:"Insecure Temporary File", cwe:"CWE-377", sev:"LOW",
+     re:/tempfile\.mktemp\s*\(|os\.tmpnam\s*\(/,
+     rem:"Use tempfile.NamedTemporaryFile / mkstemp with secure permissions; avoid predictable /tmp paths."},
+    {id:"xss-jquery-html", cls:"Cross-Site Scripting (XSS)", cwe:"CWE-79", sev:"HIGH",
+     re:/\.html\(\s*[^)]*(?:\+|\$\{|request|\.val\(\)|location\.)/,
+     rem:"Use .text() or sanitize before .html(); auto-escape untrusted input."},
+    {id:"insecure-cookie", cls:"Security Misconfiguration", cwe:"CWE-614", sev:"LOW",
+     re:/httpOnly\s*[:=]\s*false|(?:^|[^a-z])secure\s*[:=]\s*false|SESSION_COOKIE_SECURE\s*=\s*False/i,
+     rem:"Set Secure and HttpOnly (and SameSite) on session cookies."}
   ];
   var SEV_RANK = {CRITICAL:4, HIGH:3, MEDIUM:2, LOW:1, INFO:0};
   var SEV_COLOR = {CRITICAL:"#dc2626", HIGH:"#ea580c", MEDIUM:"#ca8a04", LOW:"#2563eb", INFO:"#6b7280"};
@@ -231,7 +264,14 @@
     "Server-Side Request Forgery (SSRF)": '# validate the URL against an allow-list; block internal & cloud-metadata IPs',
     "Path Traversal": 'p = os.path.realpath(os.path.join(BASE, name)); assert p.startswith(BASE)',
     "Insecure Randomness": 'secrets.token_hex(16)   # or crypto.getRandomValues() in JS',
-    "Security Misconfiguration": '# disable debug in production; restrict CORS to specific trusted origins'
+    "Security Misconfiguration": '# disable debug in production; restrict CORS to specific origins; set Secure/HttpOnly cookies',
+    "Broken Authentication": 'jwt.decode(token, os.environ["JWT_SECRET"], algorithms=["HS256"])   # never "none"; secret from env',
+    "NoSQL Injection": 'db.users.find({"name": name})   # pass values; avoid $where / query built from input',
+    "XML External Entity (XXE)": 'etree.parse(src, parser=etree.XMLParser(resolve_entities=False, no_network=True))',
+    "Open Redirect": '# redirect only to an allow-listed set of paths, never a raw user-supplied URL',
+    "Sensitive Data Exposure": 'logger.info("login for user %s", user_id)   # never log secrets/PII; redact first',
+    "Cleartext Transmission": 'requests.get("https://api.example.com/…")   # always TLS for external calls',
+    "Insecure Temporary File": 'tempfile.NamedTemporaryFile(delete=True)   # never mktemp()/predictable /tmp paths'
   };
   var FP_PATH = /(^|\/)(tests?|__tests__|fixtures?|examples?|mocks?|spec)(\/|\.)/i;
   var MAX_BYTES = 512 * 1024, MAX_LINES = 20000;
@@ -300,7 +340,7 @@
     codeLines = codeLines || [];
     var el = document.getElementById("results");
     if(!findings.length){
-      el.innerHTML = '<div class="ok">✅ Scanned <b>'+codeLines.length+'</b> lines — no matches from the quick heuristic ruleset.<br><span class="muted">This demo only checks ~17 common patterns and has no data-flow analysis, so it misses plenty. Try “Load example”, or run the full Semgrep/CodeQL pipeline for real coverage.</span></div>';
+      el.innerHTML = '<div class="ok">✅ Scanned <b>'+codeLines.length+'</b> lines — no matches from the <b>'+RULES.length+'</b> in-browser checks.<br><span class="muted">This is a lightweight demo (regex only, no data-flow), so it trades depth for speed and privacy and <b>will</b> miss things — a clean result here is <b>not</b> proof the code is secure. Cullwise\'s real coverage comes from ingesting SARIF from full scanners (Semgrep, CodeQL, Trivy). Try “Load example”.</span></div>';
       return;
     }
     var classes = {}, fp = 0;
