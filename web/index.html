@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
 <title>Cullwise — AI-assisted AppSec triage</title>
 <meta name="description" content="Cullwise turns raw security-scanner noise into a prioritized, de-duplicated, class-clustered remediation report. Try the in-browser scan — your code never leaves your machine.">
@@ -299,7 +300,7 @@
     codeLines = codeLines || [];
     var el = document.getElementById("results");
     if(!findings.length){
-      el.innerHTML = '<div class="ok">✅ No obvious issues found by the quick scan.<br><span class="muted">Remember: this heuristic demo misses what a full scanner catches — run Semgrep/CodeQL for real coverage.</span></div>';
+      el.innerHTML = '<div class="ok">✅ Scanned <b>'+codeLines.length+'</b> lines — no matches from the quick heuristic ruleset.<br><span class="muted">This demo only checks ~17 common patterns and has no data-flow analysis, so it misses plenty. Try “Load example”, or run the full Semgrep/CodeQL pipeline for real coverage.</span></div>';
       return;
     }
     var classes = {}, fp = 0;
@@ -357,10 +358,11 @@
     reader.readAsText(f);   // read as TEXT only — never executed
   });
   var analyzeBtn = document.getElementById("analyze");
+  function nowMs(){ return (window.performance && performance.now) ? performance.now() : Date.now(); }
   analyzeBtn.addEventListener("click", function(){
-    var code = document.getElementById("code").value || "";
+    var codeVal = document.getElementById("code").value || "";
     var results = document.getElementById("results");
-    if(!code.trim()){
+    if(!codeVal.trim()){
       results.innerHTML = '<div class="ok">✍️ Paste your source code above, or upload a file — then click Analyze.</div>';
       results.scrollIntoView({behavior:"smooth", block:"nearest"});
       document.getElementById("code").focus();
@@ -369,12 +371,21 @@
     analyzeBtn.disabled = true; analyzeBtn.textContent = "Analyzing…";
     results.innerHTML = '<div class="progress"><div class="track"><span id="pbar"></span></div><span class="pct" id="ppct">0%</span></div><div class="analyzing">Scanning locally in your browser…</div>';
     results.scrollIntoView({behavior:"smooth", block:"nearest"});
-    scanAsync(code, currentName, function(p){
-      var bar = document.getElementById("pbar"); if(bar){ bar.style.width = p + "%"; document.getElementById("ppct").textContent = p + "%"; }
-    }, function(findings){
-      render(findings, currentName, code.split(/\r?\n/));
-      analyzeBtn.disabled = false; analyzeBtn.textContent = "Analyze";
-    });
+
+    var MIN_MS = 700, start = nowMs(), done = false, result = null;
+    scanAsync(codeVal, currentName, function(){}, function(findings){ done = true; result = findings; });
+    (function tick(){
+      var t = (nowMs() - start) / MIN_MS;
+      var pct = done ? 100 : Math.min(95, Math.round(t * 95));   // climb to 95%, snap to 100 when done
+      var bar = document.getElementById("pbar");
+      if(bar){ bar.style.width = pct + "%"; var pe = document.getElementById("ppct"); if(pe) pe.textContent = pct + "%"; }
+      if(done && t >= 1){                                        // hold the bar visible for at least MIN_MS
+        render(result, currentName, codeVal.split(/\r?\n/));
+        analyzeBtn.disabled = false; analyzeBtn.textContent = "Analyze";
+      } else {
+        requestAnimationFrame(tick);
+      }
+    })();
   });
   document.getElementById("clear").addEventListener("click", function(){
     document.getElementById("code").value = "";
